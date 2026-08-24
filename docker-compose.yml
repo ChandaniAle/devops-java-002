@@ -4,7 +4,7 @@ version: '3.8'
 services:
   db-service:
     image: postgres:16-alpine
-    container_name: postgres_db
+    container_name: postgres_database
     environment:
       POSTGRES_DB: ${DB_NAME:-studentdb}
       POSTGRES_USER: ${DB_USER:-postgres}
@@ -24,7 +24,7 @@ services:
     container_name: spring_backend
     ports:
     # - host:container
-      - "8080:8080"
+      - "8081:8081"
     environment:
       # These match the ${VAR} names in your application.properties
       - DB_HOST=db-service
