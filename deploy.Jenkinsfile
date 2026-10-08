@@ -142,68 +142,76 @@ pipeline {
         
 
         stage('🚀 Deploy to Production') {
-            steps {
-                script {
-                    withCredentials([
-                        usernamePassword(
-                            credentialsId: 'dockerhub-credentials',
-                            usernameVariable: 'DOCKER_USERNAME',
-                            passwordVariable: 'DOCKER_PASSWORD'
-                        )
-                    ]) {
-                        sshagent(['deploy-jenkins-ssh-server']) {
-                            sh """
-                                DOCKER_IMAGE="\${DOCKER_USERNAME}/${APP_NAME}"
-                                
-                                echo "=== Deploying to Production ==="
-                                echo "Server: ${DEPLOY_SERVER}"
-                                echo "Image : \${DOCKER_IMAGE}:${IMAGE_TAG}"
-                                
-                                ssh -o StrictHostKeyChecking=no \\
-                                    -p ${DEPLOY_PORT} \\
-                                    ${DEPLOY_USER}@${DEPLOY_SERVER} << ENDSSH
+    steps {
+        script {
+            withCredentials([
+                usernamePassword(
+                    credentialsId: 'dockerhub-credentials',
+                    usernameVariable: 'DOCKER_USERNAME',
+                    passwordVariable: 'DOCKER_PASSWORD'
+                )
+            ]) {
+                sshagent(['deploy-jenkins-ssh-server']) {
+                    // We use double quotes for the outer block so Jenkins variables like DEPLOY_SERVER, 
+                    // APP_NAME, IMAGE_TAG, and ENV_FILE are evaluated on the controller.
+                    sh """
+                        DOCKER_IMAGE="\${DOCKER_USERNAME}/${APP_NAME}"
+                        
+                        echo "=== Deploying to Production ==="
+                        echo "Server: ${DEPLOY_SERVER}"
+                        echo "Image : \${DOCKER_IMAGE}:${IMAGE_TAG}"
+                        
+                        # We pass DOCKER_PASSWORD and DOCKER_USERNAME through SSH environment options 
+                        # to avoid putting them directly in the command string, silencing the interpolation warning.
+                        ssh -o StrictHostKeyChecking=no \\
+                            -p ${DEPLOY_PORT} \\
+                            ${DEPLOY_USER}@${DEPLOY_SERVER} \\
+                            DOCKER_USERNAME='${DOCKER_USERNAME}' DOCKER_PASSWORD='${DOCKER_PASSWORD}' << 'ENDSSH'
 
-                                    echo "=== Connected to Production Server ==="
-                                    
-                                    # Login to DockerHub
-                                    echo ${DOCKER_PASSWORD} | docker login -u ${DOCKER_USERNAME} --password-stdin
-                                    set -e
-                                    # Pull new image
-                                    docker pull \${DOCKER_IMAGE}:${IMAGE_TAG}
-                                    
-                                    # Stop old container
-                                    docker stop ${APP_NAME} 2>/dev/null || true
-                                    docker rm   ${APP_NAME} 2>/dev/null || true
-                                    
-                                    # Start new container with .env file
-                                    docker run -d \\
-                                        --name ${APP_NAME} \\
-                                        --restart unless-stopped \\
-                                        --network private-network \\
-                                        --env-file ${ENV_FILE} \\
-                                        -p ${APP_PORT}:${APP_PORT} \\
-                                        \${DOCKER_IMAGE}:${IMAGE_TAG}
-                                    
-                                    # Verify
-                                    sleep 5
-                                    docker ps | grep ${APP_NAME}
-                                    
-                                    # Show logs
-                                    docker logs --tail 20 ${APP_NAME}
-                                    
-                                    # Cleanup old images
-                                    docker images | grep \${DOCKER_IMAGE} | tail -n +6 | awk '{print \\\$3}' | xargs -r docker rmi || true
-                                    
-                                    docker logout
-                                    
-                                    echo "✅ Deployment completed!"
+                            echo "=== Connected to Production Server ==="
+                            
+                            # Login to DockerHub safely using the passed env variables
+                            echo "\$DOCKER_PASSWORD" | docker login -u "\$DOCKER_USERNAME" --password-stdin
+                            
+                            set -e
+                            
+                            # Pull new image
+                            docker pull ${DOCKER_USERNAME}/${APP_NAME}:${IMAGE_TAG}
+                            
+                            # Stop old container
+                            docker stop ${APP_NAME} 2>/dev/null || true
+                            docker rm   ${APP_NAME} 2>/dev/null || true
+                            
+                            # Start new container with .env file
+                            docker run -d \\
+                                --name ${APP_NAME} \\
+                                --restart unless-stopped \\
+                                --network private-network \\
+                                --env-file ${ENV_FILE} \\
+                                -p ${APP_PORT}:${APP_PORT} \\
+                                ${DOCKER_USERNAME}/${APP_NAME}:${IMAGE_TAG}
+                            
+                            # Verify
+                            sleep 5
+                            docker ps | grep ${APP_NAME}
+                            
+                            # Show logs
+                            docker logs --tail 20 ${APP_NAME}
+                            
+                            # Cleanup old images (5 backslashes are required for awk print to evaluate cleanly over ssh inside jenkins)
+                            docker images | grep "${DOCKER_USERNAME}/${APP_NAME}" | tail -n +6 | awk '{print \\\\\$3}' | xargs -r docker rmi || true
+                            
+                            docker logout
+                            
+                            echo "✅ Deployment completed!"
 ENDSSH
-                            """
-                        }
-                    }
+                    """
                 }
             }
         }
+    }
+}
+
 
         stage('🏥 Health Check') {
             steps {
