@@ -25,13 +25,13 @@ pipeline {
         IMAGE_TAG       = "${env.GIT_COMMIT.take(7)}"
         
         // Deployment server configuration
-        DEPLOY_SERVER   = '185.199.53.175'
-        DEPLOY_USER     = 'deploy'
+        DEPLOY_SERVER   = '54.234.160.113'
+        DEPLOY_USER     = 'ubuntu'
         DEPLOY_PORT     = '22'
         APP_PORT        = '8080'
         
         // .env file path on production server
-        ENV_FILE        = '/home/deploy/java-devops/.env'
+        ENV_FILE        = '/home/ubuntu/deploy/.env'
     }
 
     stages {
@@ -151,7 +151,7 @@ pipeline {
                             passwordVariable: 'DOCKER_PASSWORD'
                         )
                     ]) {
-                        sshagent(['deployment-server-ssh']) {
+                        sshagent(['deploy-jenkins-ssh-server']) {
                             sh """
                                 DOCKER_IMAGE="\${DOCKER_USERNAME}/${APP_NAME}"
                                 
@@ -179,7 +179,7 @@ pipeline {
                                     docker run -d \\
                                         --name ${APP_NAME} \\
                                         --restart unless-stopped \\
-                                        --network teaching-platform_default \\
+                                        --network private-network \\
                                         --env-file ${ENV_FILE} \\
                                         -p ${APP_PORT}:${APP_PORT} \\
                                         \${DOCKER_IMAGE}:${IMAGE_TAG}

@@ -19,19 +19,20 @@
                               https://maven.apache.org/xsd/settings-1.2.0.xsd">
 
   <!-- ═══════════════════════════════════════════════════════════════
-       SERVERS — credentials for uploading artifacts to Nexus
+       SERVERS — credentials for uploading artifacts to
+        Nexus
        IDs here MUST match <distributionManagement> IDs in pom.xml
   ═══════════════════════════════════════════════════════════════════ -->
   <servers>
     <server>
       <id>nexus-releases</id>
-      <username>${env.NEXUS_USER}</username>
-      <password>${env.NEXUS_PASS}</password>
+      <username>jenkins-deploy</username>
+      <password>12345678</password>
     </server>
     <server>
       <id>nexus-snapshots</id>
-      <username>${env.NEXUS_USER}</username>
-      <password>${env.NEXUS_PASS}</password>
+      <username>jenkins-deploy</username>
+      <password>12345678</password>
     </server>
   </servers>
 
@@ -43,7 +44,7 @@
     <mirror>
       <id>nexus-mirror</id>
       <name>Nexus Repository Manager</name>
-      <url>${env.NEXUS_URL}/repository/maven-public/</url>
+      <url>http://localhost:8081/repository/maven-public/</url>
       <mirrorOf>*</mirrorOf>
     </mirror>
   </mirrors>
