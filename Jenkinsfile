@@ -20,7 +20,7 @@ pipeline {
            // Stable identity for the project created/shown in SonarQube.
           // The Jenkins SonarQube installation supplies SONAR_HOST_URL and
           // SONAR_AUTH_TOKEN during the analysis stage.
-          SONAR_PROJECT_KEY = 'techaxis:devopsclass'
+          SONAR_PROJECT_KEY = 'techaxis:DevopsMorningclass'
           SONAR_PROJECT_NAME = 'DevOps Class Java Application'
       }                                                                                                                            
    

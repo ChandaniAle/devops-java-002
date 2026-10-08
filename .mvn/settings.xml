@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Maven settings.xml for Nexus integration
+  =========================================
+  Place this file at:  .mvn/settings.xml  (commit to Git — no passwords in here)
+  
+  Credentials are injected via environment variables from Jenkins (withCredentials block)
+  or from your shell for local development.
+  
+  For LOCAL DEVELOPMENT, set env vars before running Maven:
+    export NEXUS_URL=http://localhost:8081
+    export NEXUS_USER=admin
+    export NEXUS_PASS=your-password
+    ./mvnw -s .mvn/settings.xml deploy
+-->
+<settings xmlns="http://maven.apache.org/SETTINGS/1.2.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.2.0
+                              https://maven.apache.org/xsd/settings-1.2.0.xsd">
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       SERVERS — credentials for uploading artifacts to
+        Nexus
+       IDs here MUST match <distributionManagement> IDs in pom.xml
+  ═══════════════════════════════════════════════════════════════════ -->
+  <servers>
+    <server>
+      <id>nexus-releases</id>
+      <username>jenkins-deploy</username>
+      <password>12345678</password>
+    </server>
+    <server>
+      <id>nexus-snapshots</id>
+      <username>jenkins-deploy</username>
+      <password>12345678</password>
+    </server>
+  </servers>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       MIRRORS — redirect ALL Maven dependency downloads through Nexus
+       mirrorOf: * means "catch everything, send it all to Nexus"
+  ═══════════════════════════════════════════════════════════════════ -->
+  <mirrors>
+    <mirror>
+      <id>nexus-mirror</id>
+      <name>Nexus Repository Manager</name>
+      <url>http://localhost:8081/repository/maven-public/</url>
+      <mirrorOf>*</mirrorOf>
+    </mirror>
+  </mirrors>
+
+</settings>
